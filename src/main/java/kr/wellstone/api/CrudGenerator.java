@@ -1,8 +1,14 @@
 package kr.wellstone.api;
 
 import com.squareup.javapoet.*;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.ModelMapper;
+import org.springframework.context.MessageSource;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.context.support.ResourceBundleMessageSource;
+import org.springframework.core.env.Environment;
 
 import javax.lang.model.element.Modifier;
 import java.io.File;
@@ -23,72 +29,36 @@ public class CrudGenerator {
      * TODO...
      */
     public static void defaultSetup(String packageName) throws IOException {
-        String configPackageName = packageName + ".config";
+        File file = new File("src/main/java");
+
         MethodSpec modelMapper = MethodSpec.methodBuilder("modelMapper")
+                .addAnnotation(Bean.class)
+                .addModifiers(Modifier.PUBLIC)
                 .returns(ModelMapper.class)
+                .addStatement("return new ModelMapper()")
+                .build();
+
+        MethodSpec messageSource = MethodSpec.methodBuilder("messageSource")
+                .addAnnotation(Bean.class)
+                .addModifiers(Modifier.PUBLIC)
+                .returns(MessageSource.class)
+                .addStatement("ResourceBundleMessageSource messageSource = new $T()", ResourceBundleMessageSource.class)
+                .addStatement("messageSource.setBasename(\"messages/message\")")
+                .addStatement("messageSource.setDefaultEncoding(\"UTF-8\")")
+                .addStatement("return messageSource")
                 .build();
 
         TypeSpec applicationConfig = TypeSpec.classBuilder("ApplicationConfig")
+                .addAnnotation(Slf4j.class)
+                .addAnnotation(Configuration.class)
+                .addAnnotation(RequiredArgsConstructor.class)
                 .addModifiers(Modifier.PUBLIC)
+                .addField(Environment.class, "env", Modifier.FINAL, Modifier.PRIVATE)
                 .addMethod(modelMapper)
+                .addMethod(messageSource)
                 .build();
 
-        JavaFile javaFile = JavaFile.builder(packageName, applicationConfig).build();
-        javaFile.writeTo(System.out);
-//        File file = new File(configPackageName);
-//        javaFile.writeTo(file);
+        JavaFile applicationConfigFile = JavaFile.builder(String.format("%s.config", packageName), applicationConfig).build();
+        applicationConfigFile.writeTo(file);
     }
 }
-
-
-/*
-@Slf4j
-@Configuration
-@RequiredArgsConstructor
-public class ApplicationConfig {
-
-    private final Environment env;
-
-    @Bean
-    public ModelMapper modelMapper() {
-        return new ModelMapper();
-    }
-
-    @Bean
-    public RestTemplate restTemplate() {
-        return new RestTemplate();
-    }
-
-    @Bean
-    public MessageSource messageSource() {
-        ResourceBundleMessageSource messageSource = new ResourceBundleMessageSource();
-        messageSource.setBasename("messages/message");
-        messageSource.setDefaultEncoding("UTF-8");
-        return messageSource;
-    }
-
-    @Bean
-    public ApplicationRunner applicationRunner() {
-        return new ApplicationRunner() {
-            @Autowired
-            LeshanServer leshanServer;
-
-            @Override
-            public void run(ApplicationArguments args) {
-                if (!Objects.equals(env.getProperty("test.code"), "true")) {
-                    leshanServer.start();
-//                    gatewayRepository.findAll().forEach(gateway -> {
-//                        try {
-//                            ((EditableSecurityStore) leshanServer.getSecurityStore())
-//                                    .add(SecurityInfo.newPreSharedKeyInfo(gateway.getEndpoint(), gateway.getEndpoint(), gateway.getPsk().getBytes()));
-//                        } catch (NonUniqueSecurityInfoException e) {
-//                            e.printStackTrace();
-//                        }
-//                    });
-                }
-            }
-        };
-    }
-}
-
- */
