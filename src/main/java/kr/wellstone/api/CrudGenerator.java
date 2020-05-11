@@ -26,6 +26,7 @@ public class CrudGenerator {
     public static void main(String[] args) throws IOException {
         String packageName = "kr.wellstone.api";
         generateDefaultSetup(packageName);
+        generateCrudApi(packageName);
     }
 
     /**
@@ -33,6 +34,7 @@ public class CrudGenerator {
      * @implNote Generate default setup class
      * config - ApplicationConfig
      * common - ResponseData, ResponseDataType, MessageSourceImpl, GlobalExceptionController
+     * exception - BadValidationException, DuplicatedException, NoPermissionException, NotFoundException
      * TODO...
      */
     public static void generateDefaultSetup(String packageName) throws IOException {
@@ -41,6 +43,20 @@ public class CrudGenerator {
         generateMessageSourceImpl(packageName);
         generateGlobalExceptionController(packageName);
         generateExceptions(packageName);
+    }
+
+    /**
+     * @param packageName package name
+     * @implNote Generate CRUD API class
+     * 1. read domain file(resources/domain/..) and create domain class
+     * 2. create controller(url = domain)
+     * 3. create service
+     * 4. create repository
+     * 5. create querydsl(TODO)
+     * TODO...
+     */
+    private static void generateCrudApi(String packageName) {
+
     }
 
     private static void generateApplicationConfig(String packageName) throws IOException {
